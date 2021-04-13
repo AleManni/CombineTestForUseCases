@@ -65,7 +65,7 @@ class Presenter: ObservableObject {
     }
   }
   
-  // ALTERNATIVE PATTERN USING CombineLatest and StateHandler
+  // ALTERNATIVE PATTERN USING CombineLatest
   
   lazy var onCompletion2: ((Subscribers.Completion<Error>) -> Void)? = { [weak self] completion in
       switch completion {
