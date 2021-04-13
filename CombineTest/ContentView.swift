@@ -7,18 +7,18 @@ struct ContentViewImpl: View {
   
   init(presenter: Presenter) {
     self.presenter = presenter
-    presenter.start()
+    presenter.start2()
   }
   
   var body: some View {
     VStack {
       HStack {
-        Text("COMPOSITE showcases the view model resulting from two separate publishers, each operating on a different background thread and providing a UseCaseState holding a different domain model. The publishers outputs are then combined in the Presenter, sync'ed on main, and their output (UseCaseStates) fed to a statehandler. \n\nSTREAM 1 and STREAM 2 display the models published on those discrete streams")
+        Text("COMPOSITE showcases the view model resulting from two separate publishers, each operating on a different background thread and providing a UseCaseState holding a different domain model. The publishers outputs are then combined in the Presenter, sync'ed on main, and their output (UseCaseStates) fed to a statehandler.")
       }.padding()
       VStack(alignment: .leading, spacing: 14) {
       Text("Composite = \(presenter.compositeModel.name)")
-      Text("Stream 1️⃣ = \(presenter.modelOne.name)")
-      Text("Stream 2️⃣  = \(presenter.modelTwo.name)")
+      //Text("Stream 1️⃣ = \(presenter.modelOne.name)")
+     // Text("Stream 2️⃣  = \(presenter.modelTwo.name)")
     }
     .padding()
   }

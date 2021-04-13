@@ -4,8 +4,7 @@ import UIKit
 import Combine
 
 enum UseCaseState<Value> {
-  case idle
+  case noValue
   case loading
-  case success(_ value: Value)
-  case failure(_ error: Error)
+  case loaded(_ value: Value)
 }
