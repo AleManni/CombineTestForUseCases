@@ -67,27 +67,12 @@ class Presenter: ObservableObject {
   
   // ALTERNATIVE PATTERN USING CombineLatest and StateHandler
   
-  private lazy var actions = StatesHandler.Actions<DomainModelOne, DomainModelTwo>(
-    onLoading: {
-      self.compositeModel = ViewModelItem(name: "Loading ⌛")
-    },
-    onSuccess: { model1, model2 in
-      self.compositeModel = ViewModelItem(name: "🎉 1️⃣ \(model1.name) 2️⃣ \(String(model2.number))")
-    },
-    onError: { _ in
-      self.compositeModel = ViewModelItem(name: "Failure ❌")
-    })
-  
   lazy var onCompletion2: ((Subscribers.Completion<Error>) -> Void)? = { [weak self] completion in
       switch completion {
       case .finished:
        break
       case .failure(let error):
-        guard let self = self else { return }
-        StatesHandler.handle(state1: nil,
-                             state2: nil,
-                             error: error,
-                             actions: self.actions)
+        self?.makeViewModel(state1: nil, state2: nil, error: error)
       }
   }
   
@@ -102,12 +87,21 @@ class Presenter: ObservableObject {
         self?.onCompletion2?(error)
       },
       receiveValue: { [weak self] state1, state2 in
-        guard let self = self else { return }
-        StatesHandler.handle(state1: state1,
-                             state2: state2,
-                             error: nil,
-                             actions: self.actions)
+        self?.makeViewModel(state1: state1, state2: state2, error: nil)
       })
       .store(in: &cancellables)
+  }
+  
+  private func makeViewModel(state1: UseCaseState<DomainModelOne>?, state2: UseCaseState<DomainModelTwo>?, error: Error?) {
+    switch (state1, state2, error) {
+      case (_, _, let error) where error != nil:
+        compositeModel = ViewModelItem(name: "Failure: \(error.debugDescription)")
+    case (.loading, _, _), (_, .loading, _):
+      compositeModel = ViewModelItem(name: "Loading ⌛")
+    case let (.loaded(value1), .loaded(value2), _):
+      compositeModel = ViewModelItem(name: String("🎉 \(value1) + \(value2)"))
+    default:
+      break
+    }
   }
 }
