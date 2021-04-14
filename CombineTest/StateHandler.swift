@@ -14,23 +14,18 @@ enum StatesHandler {
   }
   
   static func handle<T, S>(
-    state1: UseCaseState<T>,
-    state2: UseCaseState<S>,
+    state1: UseCaseState<T>?,
+    state2: UseCaseState<S>?,
+    error: Error?,
     actions: Actions<T, S>) {
     
-    
-    
-    switch (state1, state2) {
-    
-    case let (.failure(error), _), let (_, .failure(error)):
-      actions.onError(error)
-    
-    case (_, .loading), (.loading, _):
+    switch (state1, state2, error) {
+      case (_, _, let error) where error != nil:
+        actions.onError(error!)
+    case (.loading, _, _), (_, .loading, _):
       actions.onLoading()
-      
-    case let (.success(value1), .success(value2)):
+    case let (.loaded(value1), .loaded(value2), _):
       actions.onSuccess(value1, value2)
-      
     default:
       break
     }
