@@ -20,13 +20,13 @@ class Presenter: ObservableObject {
   private var receivedError: Error?
   
   lazy var onCompletion: ((Subscribers.Completion<Error>) -> Void)? = { [weak self] completion in
-      switch completion {
-      case .finished:
-       break
-      case .failure(let error):
-        self?.receivedError = error
-        self?.makeViewModel()
-      }
+    switch completion {
+    case .finished:
+      break
+    case .failure(let error):
+      self?.receivedError = error
+      self?.makeViewModel()
+    }
   }
   
   func start1() {
@@ -54,8 +54,8 @@ class Presenter: ObservableObject {
   
   private func makeViewModel() {
     switch (state1, state2, receivedError) {
-      case (_, _, let error) where error != nil:
-        compositeModel = ViewModelItem(name: "Failure: \(error.debugDescription)")
+    case (_, _, let error) where error != nil:
+      compositeModel = ViewModelItem(name: "Failure: \(error.debugDescription)")
     case (.loading, _, _), (_, .loading, _):
       compositeModel = ViewModelItem(name: "Loading ⌛")
     case let (.loaded(value1), .loaded(value2), _):
@@ -68,40 +68,46 @@ class Presenter: ObservableObject {
   // ALTERNATIVE PATTERN USING CombineLatest
   
   lazy var onCompletion2: ((Subscribers.Completion<Error>) -> Void)? = { [weak self] completion in
-      switch completion {
-      case .finished:
-       break
-      case .failure(let error):
-        self?.makeViewModel(state1: nil, state2: nil, error: error)
+    switch completion {
+    case .finished:
+      break
+    case .failure(let error):
+      if let model = self?.makeViewModel(state1: nil, state2: nil, error: error) {
+        self?.compositeModel = model
       }
+    }
   }
   
   func start2()  {
     useCaseOne.start()
     useCaseTwo.start()
     
-    Publishers
-      .CombineLatest(useCaseOne.caseState.receive(on: DispatchQueue.main),
-                     useCaseTwo.caseState.receive(on: DispatchQueue.main))
+    useCaseOne.caseState
+      .combineLatest(useCaseTwo.caseState)
+      .receive(on: DispatchQueue.main)
+      .map { [weak self] state1, state2 in
+        self?.makeViewModel(state1: state1, state2: state2, error: nil)
+      }
       .sink(receiveCompletion: { [weak self] error in
         self?.onCompletion2?(error)
-      },
-      receiveValue: { [weak self] state1, state2 in
-        self?.makeViewModel(state1: state1, state2: state2, error: nil)
+      }, receiveValue: { [weak self] model in
+        if let model = model {
+          self?.compositeModel = model
+        }
       })
       .store(in: &cancellables)
   }
   
-  private func makeViewModel(state1: UseCaseState<DomainModelOne>?, state2: UseCaseState<DomainModelTwo>?, error: Error?) {
+  private func makeViewModel(state1: UseCaseState<DomainModelOne>?, state2: UseCaseState<DomainModelTwo>?, error: Error?) -> ViewModelItem?  {
     switch (state1, state2, error) {
-      case (_, _, let error) where error != nil:
-        compositeModel = ViewModelItem(name: "Failure: \(error.debugDescription)")
+    case (_, _, let error) where error != nil:
+      return ViewModelItem(name: "Failure: \(error.debugDescription)")
     case (.loading, _, _), (_, .loading, _):
-      compositeModel = ViewModelItem(name: "Loading ⌛")
+      return ViewModelItem(name: "Loading ⌛")
     case let (.loaded(value1), .loaded(value2), _):
-      compositeModel = ViewModelItem(name: String("🎉 \(value1) + \(value2)"))
+      return ViewModelItem(name: String("🎉 \(value1) + \(value2)"))
     default:
-      break
+      return nil
     }
   }
 }
